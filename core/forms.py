@@ -75,6 +75,13 @@ class RegistrationForm(forms.ModelForm):
         user.email = self.cleaned_data['email']
         user.business_name = self.cleaned_data['business_name']
         user.set_password(self.cleaned_data['password'])
+        
+        # Multi-tenant: Create or get the company based on business_name
+        from accounts.models import Company
+        company, _ = Company.objects.get_or_create(name=self.cleaned_data['business_name'])
+        user.company = company
+        user.role = 'company' # Default to company role for all signups
+
         if commit:
             user.save()
         return user

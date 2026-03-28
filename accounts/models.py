@@ -20,7 +20,7 @@ class User(AbstractUser):
     ]
 
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='users', null=True, blank=True, db_index=True)
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='admin', db_index=True)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='company', db_index=True)
     
     business_name = models.CharField(max_length=255, blank=True, null=True)
     email = models.EmailField(unique=True)
