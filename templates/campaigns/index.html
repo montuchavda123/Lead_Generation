@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Campaigns — ConvertOS{% endblock %}
+{% block page_title %}Campaigns{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+    <!-- Create Campaign Form -->
+    <div class="lg:col-span-2">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sticky top-24">
+            <h2 class="text-lg font-semibold text-slate-800 mb-1">Create Campaign</h2>
+            <p class="text-sm text-slate-400 mb-6">Send a targeted message to a lead segment</p>
+
+            <form method="post" id="campaign-form">
+                {% csrf_token %}
+                <div class="space-y-5">
+                    <!-- Campaign Name -->
+                    <div>
+                        <label for="id_name" class="block text-sm font-medium text-slate-700 mb-1.5">Campaign Name</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                        <p class="mt-1.5 text-xs text-red-500">{{ form.name.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Segment -->
+                    <div>
+                        <label for="id_segment" class="block text-sm font-medium text-slate-700 mb-1.5">Target Segment</label>
+                        {{ form.segment }}
+                        {% if form.segment.errors %}
+                        <p class="mt-1.5 text-xs text-red-500">{{ form.segment.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Message -->
+                    <div>
+                        <label for="id_message" class="block text-sm font-medium text-slate-700 mb-1.5">Message</label>
+                        {{ form.message }}
+                        {% if form.message.errors %}
+                        <p class="mt-1.5 text-xs text-red-500">{{ form.message.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" class="w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-indigo-600 focus:ring-4 focus:ring-indigo-200 transition-all duration-200 shadow-lg shadow-indigo-200">
+                        Create Campaign
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Campaign History -->
+    <div class="lg:col-span-3">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="p-5 border-b border-slate-100">
+                <h3 class="text-lg font-semibold text-slate-800">Campaign History</h3>
+            </div>
+
+            <div class="divide-y divide-slate-100">
+                {% for campaign in campaigns %}
+                <div class="p-5 hover:bg-slate-50/50 transition-colors duration-150">
+                    <div class="flex items-start justify-between mb-2">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center
+                                {% if campaign.segment == 'hot' %}bg-orange-50{% elif campaign.segment == 'warm' %}bg-yellow-50{% else %}bg-slate-100{% endif %}">
+                                {% if campaign.segment == 'hot' %}
+                                <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg>
+                                {% elif campaign.segment == 'warm' %}
+                                <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                                {% else %}
+                                <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-semibold text-slate-800">{{ campaign.name }}</h4>
+                                <span class="inline-flex items-center text-xs font-medium mt-0.5
+                                    {% if campaign.segment == 'hot' %}text-orange-500{% elif campaign.segment == 'warm' %}text-yellow-600{% else %}text-slate-400{% endif %}">
+                                    {{ campaign.get_segment_display }} Segment
+                                </span>
+                            </div>
+                        </div>
+                        <span class="text-xs text-slate-400 whitespace-nowrap">{{ campaign.created_at|date:"M d, Y" }}</span>
+                    </div>
+                    <p class="text-sm text-slate-500 leading-relaxed ml-13 pl-0.5">{{ campaign.message|truncatewords:30 }}</p>
+                </div>
+                {% empty %}
+                <div class="p-12 text-center">
+                    <div class="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
+                    </div>
+                    <p class="text-sm font-medium text-slate-400">No campaigns yet</p>
+                    <p class="text-xs text-slate-300 mt-1">Create your first campaign to get started</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

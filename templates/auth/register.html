@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register — ConvertOS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: { extend: { fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] } } }
+        }
+    </script>
+    <style>* { font-family: 'Inter', system-ui, sans-serif; }</style>
+</head>
+<body class="h-full bg-gradient-to-br from-slate-50 via-indigo-50 to-purple-50">
+    <div class="min-h-full flex items-center justify-center p-4">
+        <div class="w-full max-w-md">
+            <!-- Logo -->
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center gap-2.5 mb-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center shadow-lg shadow-indigo-200">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </div>
+                    <span class="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-indigo-500 bg-clip-text text-transparent">ConvertOS</span>
+                </div>
+                <p class="text-slate-500 text-sm">Create your account</p>
+            </div>
+
+            <!-- Card -->
+            <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 p-8">
+                {% if form.non_field_errors %}
+                <div class="mb-5 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm">
+                    {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <form method="post" novalidate id="register-form">
+                    {% csrf_token %}
+
+                    <div class="space-y-5">
+                        <!-- Business Name -->
+                        <div>
+                            <label for="id_business_name" class="block text-sm font-medium text-slate-700 mb-1.5">Business Name</label>
+                            {{ form.business_name }}
+                            {% if form.business_name.errors %}
+                            <p class="mt-1.5 text-xs text-red-500">{{ form.business_name.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Email -->
+                        <div>
+                            <label for="id_email" class="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                            <p class="mt-1.5 text-xs text-red-500">{{ form.email.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Password -->
+                        <div>
+                            <label for="id_password" class="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
+                            {{ form.password }}
+                            {% if form.password.errors %}
+                            <p class="mt-1.5 text-xs text-red-500">{{ form.password.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Confirm Password -->
+                        <div>
+                            <label for="id_confirm_password" class="block text-sm font-medium text-slate-700 mb-1.5">Confirm Password</label>
+                            {{ form.confirm_password }}
+                            {% if form.confirm_password.errors %}
+                            <p class="mt-1.5 text-xs text-red-500">{{ form.confirm_password.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Submit -->
+                        <button type="submit" class="w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-indigo-600 focus:ring-4 focus:ring-indigo-200 transition-all duration-200 shadow-lg shadow-indigo-200">
+                            Create Account
+                        </button>
+                    </div>
+                </form>
+
+                <div class="mt-6 text-center">
+                    <p class="text-sm text-slate-500">Already have an account? <a href="{% url 'login' %}" class="text-indigo-600 font-medium hover:text-indigo-700">Sign in</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('register-form').addEventListener('submit', function(e) {
+            const fields = ['id_business_name', 'id_email', 'id_password', 'id_confirm_password'];
+            let valid = true;
+            fields.forEach(id => {
+                const el = document.getElementById(id);
+                if (el && !el.value.trim()) {
+                    el.classList.add('border-red-400');
+                    valid = false;
+                } else if (el) {
+                    el.classList.remove('border-red-400');
+                }
+            });
+            const pw = document.getElementById('id_password');
+            const cpw = document.getElementById('id_confirm_password');
+            if (pw.value && cpw.value && pw.value !== cpw.value) {
+                cpw.classList.add('border-red-400');
+                const existing = cpw.parentElement.querySelector('.js-error');
+                if (!existing) {
+                    const err = document.createElement('p');
+                    err.className = 'mt-1.5 text-xs text-red-500 js-error';
+                    err.textContent = 'Passwords do not match';
+                    cpw.parentElement.appendChild(err);
+                }
+                valid = false;
+            }
+            if (!valid) e.preventDefault();
+        });
+    </script>
+</body>
+</html>

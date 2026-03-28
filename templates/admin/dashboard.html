@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 mb-2">Platform Administration</h1>
+    <p class="text-slate-500">Manage your company settings, billing, and team members.</p>
+</div>
+
+{% if role == 'superadmin' %}
+<!-- ⭐ Super Admin View ⭐ -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div class="bg-indigo-600 rounded-2xl p-6 shadow-sm border border-indigo-500 text-white">
+        <h3 class="text-indigo-100 font-medium text-sm mb-1 uppercase tracking-wider">Total Companies</h3>
+        <p class="text-3xl font-bold">{{ total_companies }}</p>
+    </div>
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+        <h3 class="text-slate-500 font-medium text-sm mb-1 uppercase tracking-wider">System Users</h3>
+        <p class="text-3xl font-bold text-slate-800">{{ total_users }}</p>
+    </div>
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+        <h3 class="text-slate-500 font-medium text-sm mb-1 uppercase tracking-wider">Total Leads Managed</h3>
+        <p class="text-3xl font-bold text-slate-800">{{ total_leads }}</p>
+    </div>
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+        <h3 class="text-slate-500 font-medium text-sm mb-1 uppercase tracking-wider">AI Extractions</h3>
+        <p class="text-3xl font-bold text-slate-800">{{ total_extractions }}</p>
+    </div>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <div class="px-6 py-5 border-b border-slate-200 flex justify-between items-center">
+        <h3 class="font-semibold text-slate-800">Provisioned Companies</h3>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-slate-50/50 text-slate-500 text-sm border-b border-slate-200">
+                    <th class="px-6 py-4 font-medium">Company Name</th>
+                    <th class="px-6 py-4 font-medium">Users</th>
+                    <th class="px-6 py-4 font-medium">Created At</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100/80">
+                {% for company in companies %}
+                <tr class="hover:bg-slate-50/50 transition-colors duration-150">
+                    <td class="px-6 py-4 font-medium text-slate-800">{{ company.name }}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-semibold">{{ company.user_count }} Active</span>
+                    </td>
+                    <td class="px-6 py-4 text-slate-500 text-sm">{{ company.created_at|date:"M d, Y" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% else %}
+<!-- 🏢 Company Admin View 🏢 -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-indigo-600 rounded-2xl p-6 shadow-sm border border-indigo-500 text-white">
+        <h3 class="text-indigo-100 font-medium text-sm mb-1 uppercase tracking-wider">Team Members</h3>
+        <p class="text-3xl font-bold">{{ total_team_members }}</p>
+    </div>
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+        <h3 class="text-slate-500 font-medium text-sm mb-1 uppercase tracking-wider">Company Leads</h3>
+        <p class="text-3xl font-bold text-slate-800">{{ total_leads }}</p>
+    </div>
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+        <h3 class="text-slate-500 font-medium text-sm mb-1 uppercase tracking-wider">Converted Revenue</h3>
+        <p class="text-3xl font-bold text-slate-800">${{ total_revenue }}</p>
+    </div>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <div class="px-6 py-5 border-b border-slate-200 flex justify-between items-center">
+        <h3 class="font-semibold text-slate-800">Team Roster</h3>
+        <button class="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-medium px-4 py-2 rounded-lg text-sm transition-colors">
+            + Invite Member
+        </button>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-slate-50/50 text-slate-500 text-sm border-b border-slate-200">
+                    <th class="px-6 py-4 font-medium">Email</th>
+                    <th class="px-6 py-4 font-medium">Role Access Level</th>
+                    <th class="px-6 py-4 font-medium">Joined Date</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100/80">
+                {% for member in team_members %}
+                <tr class="hover:bg-slate-50/50 transition-colors duration-150">
+                    <td class="px-6 py-4 font-medium text-slate-800">{{ member.email }}</td>
+                    <td class="px-6 py-4">
+                        {% if member.role == 'admin' %}
+                            <span class="px-2.5 py-1 bg-purple-50 text-purple-700 rounded-lg text-xs font-semibold uppercase tracking-wider">Admin</span>
+                        {% elif member.role == 'manager' %}
+                            <span class="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-lg text-xs font-semibold uppercase tracking-wider">Manager</span>
+                        {% else %}
+                            <span class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold uppercase tracking-wider">Staff</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-slate-500 text-sm">{{ member.created_at|date:"M d, Y" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

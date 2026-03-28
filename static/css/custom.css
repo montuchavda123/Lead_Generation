@@ -1,0 +1,32 @@
+/* ConvertOS - Custom Overrides */
+
+/* Custom scrollbar for sidebar */
+aside::-webkit-scrollbar { width: 4px; }
+aside::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 2px; }
+
+/* Smooth page transitions */
+.fade-in {
+    animation: fadeIn 0.35s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Active sidebar link indicator */
+.sidebar-link.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 20px;
+    background: #6366f1;
+    border-radius: 0 3px 3px 0;
+}
+
+.sidebar-link {
+    position: relative;
+}

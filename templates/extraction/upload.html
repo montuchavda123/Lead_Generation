@@ -1,0 +1,264 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 mb-2">Universal Extraction</h1>
+    <p class="text-slate-500">Upload unstructured business data (PDF, Excel, JSON) to intelligently extract and convert leads.</p>
+</div>
+
+<!-- Upload Area -->
+<div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-8 text-center" id="drop-zone">
+    <div class="max-w-xl mx-auto">
+        <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+        </div>
+        <h3 class="text-xl font-semibold text-slate-800 mb-2">Drag and drop your file</h3>
+        <p class="text-slate-500 mb-6">Supports PDF, XLSX, XLS, CSV, JSON, HTML, HTM, TXT up to 50MB.</p>
+        
+        <label class="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-medium transition-colors duration-200 inline-block">
+            <span>Browse Files</span>
+            <input type="file" id="file-input" class="hidden" accept=".csv,.xlsx,.xls,.pdf,.json,.html,.htm,.txt">
+        </label>
+    </div>
+
+    <!-- Upload Progress -->
+    <div id="upload-progress" class="hidden max-w-xl mx-auto mt-8 text-left">
+        <div class="flex justify-between text-sm text-slate-600 mb-2">
+            <span id="progress-text" class="font-medium text-slate-800">Uploading...</span>
+            <span id="progress-pct">0%</span>
+        </div>
+        <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+            <div id="progress-bar" class="h-full bg-indigo-600 w-0 transition-all duration-300"></div>
+        </div>
+    </div>
+</div>
+
+<!-- History Table -->
+<div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <div class="px-6 py-5 border-b border-slate-200">
+        <h3 class="font-semibold text-slate-800">Extraction History</h3>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-slate-50/50 text-slate-500 text-sm border-b border-slate-200">
+                    <th class="px-6 py-4 font-medium">File Name</th>
+                    <th class="px-6 py-4 font-medium">Type</th>
+                    <th class="px-6 py-4 font-medium">Upload Date</th>
+                    <th class="px-6 py-4 font-medium">Status</th>
+                    <th class="px-6 py-4 font-medium text-right">Action</th>
+                </tr>
+            </thead>
+            <tbody id="files-table-body" class="divide-y divide-slate-100/80">
+                {% for f in files %}
+                <tr class="hover:bg-slate-50/50 transition-colors duration-150" id="file-row-{{ f.id }}" data-status="{{ f.status }}">
+                    <td class="px-6 py-4">
+                        <span class="text-slate-800 font-medium">{{ f.original_name }}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-medium uppercase tracking-wider">
+                            {{ f.file_type }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-slate-500 text-sm">
+                        {{ f.created_at|date:"M d, Y" }}
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if f.status == 'completed' %}
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                Completed
+                            </span>
+                        {% elif f.status == 'failed' %}
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                Failed
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                Processing
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        {% if f.status == 'completed' %}
+                            <a href="{% url 'extraction_preview' f.id %}" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm">View Leads</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr id="empty-state">
+                    <td colspan="5" class="px-6 py-12 text-center text-slate-500">
+                        No extractions yet. Upload a file to get started.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const progressBlock = document.getElementById('upload-progress');
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text');
+    const progressPct = document.getElementById('progress-pct');
+    const filesTableBody = document.getElementById('files-table-body');
+    const emptyState = document.getElementById('empty-state');
+
+    // Drag and Drop styling
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
+        dropZone.addEventListener(evt, e => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+    });
+
+    ['dragenter', 'dragover'].forEach(evt => {
+        dropZone.addEventListener(evt, () => dropZone.classList.add('border-indigo-500', 'bg-indigo-50/30'));
+    });
+
+    ['dragleave', 'drop'].forEach(evt => {
+        dropZone.addEventListener(evt, () => dropZone.classList.remove('border-indigo-500', 'bg-indigo-50/30'));
+    });
+
+    dropZone.addEventListener('drop', e => {
+        const file = e.dataTransfer.files[0];
+        if (file) handleUpload(file);
+    });
+
+    fileInput.addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (file) handleUpload(file);
+        fileInput.value = '';
+    });
+
+    function handleUpload(file) {
+        progressBlock.classList.remove('hidden');
+        progressText.innerText = `Uploading ${file.name}...`;
+        progressBar.style.width = '0%';
+        progressBar.classList.remove('bg-emerald-500', 'bg-red-500');
+        progressBar.classList.add('bg-indigo-600');
+        progressPct.innerText = '0%';
+
+        const formData = new FormData();
+        formData.append('raw_file', file);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/extraction/upload/', true);
+        xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('access_token'));
+
+        xhr.upload.onprogress = e => {
+            if (e.lengthComputable) {
+                const percentComplete = Math.round((e.loaded / e.total) * 100);
+                progressBar.style.width = percentComplete + '%';
+                progressPct.innerText = percentComplete + '%';
+            }
+        };
+
+        xhr.onload = function() {
+            if (this.status === 201) {
+                const data = JSON.parse(this.responseText);
+                progressText.innerText = 'Upload complete! AI Extraction started.';
+                progressBar.classList.replace('bg-indigo-600', 'bg-emerald-500');
+                
+                if (emptyState) emptyState.remove();
+                
+                // Add new row to table
+                const newRow = `
+                <tr class="hover:bg-slate-50/50 transition-colors duration-150" id="file-row-${data.id}" data-status="pending">
+                    <td class="px-6 py-4"><span class="text-slate-800 font-medium">${data.original_name}</span></td>
+                    <td class="px-6 py-4"><span class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-medium uppercase tracking-wider">${data.file_type}</span></td>
+                    <td class="px-6 py-4 text-slate-500 text-sm">Just now</td>
+                    <td class="px-6 py-4" id="status-cell-${data.id}">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                            Processing
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-right" id="action-cell-${data.id}">
+                        <span class="text-slate-400 text-sm">Wait</span>
+                    </td>
+                </tr>`;
+                filesTableBody.insertAdjacentHTML('afterbegin', newRow);
+                
+                // Start polling
+                startPolling(data.id);
+            } else {
+                try {
+                    const errData = JSON.parse(this.responseText);
+                    progressText.innerText = 'Upload failed: ' + (errData.error || 'Server error');
+                } catch(e) {
+                    progressText.innerText = 'Upload failed. Please try again.';
+                }
+                progressBar.classList.replace('bg-indigo-600', 'bg-red-500');
+            }
+        };
+
+        xhr.onerror = function() {
+            progressText.innerText = 'Network error during upload.';
+            progressBar.classList.replace('bg-indigo-600', 'bg-red-500');
+        };
+
+        xhr.send(formData);
+    }
+
+    function startPolling(fileId) {
+        const interval = setInterval(() => {
+            fetch(`/api/extraction/status/${fileId}/`, {
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token') }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'completed' || data.status === 'failed') {
+                    clearInterval(interval);
+                    updateRowStatus(data);
+                }
+            })
+            .catch(err => {
+                console.error("Polling error", err);
+                clearInterval(interval);
+            });
+        }, 3000);
+    }
+
+    function updateRowStatus(data) {
+        const row = document.getElementById(`file-row-${data.id}`);
+        if (!row) return;
+        const statusCell = document.getElementById(`status-cell-${data.id}`);
+        const actionCell = document.getElementById(`action-cell-${data.id}`);
+        
+        row.setAttribute('data-status', data.status);
+        
+        if (data.status === 'completed') {
+            statusCell.innerHTML = `
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                Completed
+            </span>`;
+            actionCell.innerHTML = `<a href="/extraction/${data.id}/preview/" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm">View Leads</a>`;
+        } else if (data.status === 'failed') {
+            statusCell.innerHTML = `
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200">
+                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                Failed
+            </span>`;
+            actionCell.innerHTML = `<span class="text-slate-400 text-sm">Failed</span>`;
+        }
+    }
+
+    // Auto-poll existing processing rows on page load
+    document.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll('tr[data-status="pending"], tr[data-status="processing"]').forEach(row => {
+            const fileId = row.id.split('-').pop();
+            startPolling(fileId);
+        });
+    });
+</script>
+{% endblock %}
